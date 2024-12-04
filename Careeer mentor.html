@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career Mentor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Career Mentor</h1>
+      <p>Find the best career path based on your preferences.</p>
+    </header>
+    <nav>
+      <ul>
+        <li><a href="#profile" onclick="showSection('profile')">Profile</a></li>
+        <li><a href="#survey" onclick="showSection('survey')">Survey</a></li>
+        <li><a href="#results" onclick="showSection('results')">Results</a></li>
+        <li><a href="#mentors" onclick="showSection('mentors')">Mentors</a></li>
+      </ul>
+    </nav>
+    <section id="profile" class="section">
+      <h2>User Profile</h2>
+      <form id="profile-form">
+        <label for="username">Username:</label>
+        <input type="text" id="username" required>
+        <button type="submit">Save Profile</button>
+      </form>
+      <div id="user-info"></div>
+    </section>
+    <section id="survey" class="section hidden">
+      <h2>Interest Survey</h2>
+      <form id="survey-form">
+        <label>Do you enjoy working with numbers?</label>
+        <input type="radio" name="numbers" value="yes" required> Yes
+        <input type="radio" name="numbers" value="no"> No
+        <label>Do you like working in teams?</label>
+        <input type="radio" name="teams" value="yes" required> Yes
+        <input type="radio" name="teams" value="no"> No
+        <label>Do you prefer creative tasks?</label>
+        <input type="radio" name="creative" value="yes" required> Yes
+        <input type="radio" name="creative" value="no"> No
+        <button type="submit">Submit Survey</button>
+      </form>
+    </section>
+    <section id="results" class="section hidden">
+      <h2>Career Recommendations</h2>
+      <div id="recommendations"></div>
+    </section>
+    <section id="mentors" class="section hidden">
+      <h2>Available Mentors</h2>
+      <div id="mentor-list"></div>
+    </section>
+    <div id="notifications" class="hidden">
+      <p>Notification: <span id="notification-text"></span></p>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  .container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 80%;
+    max-width: 800px;
+    animation: fadeIn 1s ease-in-out;
+  }
+  
+  header {
+    margin-bottom: 20px;
+  }
+  
+  nav ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  
+  nav ul li {
+    margin: 0 15px;
+  }
+  
+  nav ul li a {
+    text-decoration: none;
+    color: #3498db;
+    font-weight: bold;
+  }
+  
+  .section {
+    display: none;
+    margin-top: 20px;
+  }
+  
+  .section.active {
+    display: block;
+  }
+  
+  #profile, #survey, #results, #mentors {
+    margin-bottom: 20px;
+  }
+  
+  .hidden {
+    display: none;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  #notifications {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #3498db;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    animation: slideIn 0.5s forwards;
+  }
+  
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  .mentor-card {
+    background: #e0f7fa;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mentor-card h3 {
+    margin: 0;
+    color: #00796b;
+  }
+  
+  .mentor-card p {
+    margin: 5px 0;
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    showSection('profile');
+  
+    document.querySelectorAll('nav ul li a').forEach(link => {
+      link.addEventListener('click', event => {
+        event.preventDefault();
+        const target = link.getAttribute('href').substring(1);
+        showSection(target);
+      });
+    });
+  
+    document.getElementById('profile-form').addEventListener('submit', event => {
+      event.preventDefault();
+      const username = document.getElementById('username').value;
+      if (username) {
+        localStorage.setItem('username', username);
+        document.getElementById('user-info').innerText = `Welcome, ${username}!`;
+        showNotification('Profile saved!');
+        showSection('survey');
+      } else {
+        showNotification('Please enter a valid username.');
+      }
+    });
+  
+    document.getElementById('survey-form').addEventListener('submit', event => {
+      event.preventDefault();
+      const surveyData = {
+        numbers: document.querySelector('input[name="numbers"]:checked').value,
+        teams: document.querySelector('input[name="teams"]:checked').value,
+        creative: document.querySelector('input[name="creative"]:checked').value
+      };
+      localStorage.setItem('surveyData', JSON.stringify(surveyData));
+      generateRecommendations(surveyData);
+      showNotification('Survey submitted!');
+      showSection('results');
+    });
+  
+    const savedUsername = localStorage.getItem('username');
+    if (savedUsername) {
+      document.getElementById('user-info').innerText = `Welcome back, ${savedUsername}!`;
+      showSection('survey');
+    }
+    
+    displayMentors();
+  });
+  
+  function showSection(section) {
+    document.querySelectorAll('.section').forEach(sec => {
+      sec.classList.remove('active');
+    });
+    document.getElementById(section).classList.add('active');
+  }
+  
+  function generateRecommendations(surveyData) {
+    const recommendations = document.getElementById('recommendations');
+    recommendations.innerHTML = '';
+  
+    const careerPaths = [
+      { name: 'Accountant', suitable: surveyData.numbers === 'yes' && surveyData.teams === 'no' },
+      { name: 'Software Developer', suitable: surveyData.numbers === 'yes' && surveyData.creative === 'yes' },
+      { name: 'Graphic Designer', suitable: surveyData.creative === 'yes' && surveyData.teams === 'yes' },
+      { name: 'Project Manager', suitable: surveyData.teams === 'yes' && surveyData.numbers === 'no' },
+      { name: 'Marketing Specialist', suitable: surveyData.creative === 'yes' && surveyData.teams === 'yes' }
+    ];
+  
+    const suitableCareers = careerPaths.filter(career => career.suitable);
+  
+    if (suitableCareers.length > 0) {
+      suitableCareers.forEach(career => {
+        const div = document.createElement('div');
+        div.innerHTML = `<h3>${career.name}</h3>
+                         <button onclick="saveCareer('${career.name}')">Save Career</button>`;
+        recommendations.appendChild(div);
+      });
+    } else {
+      recommendations.innerHTML = '<p>No suitable careers found based on your survey results.</p>';
+    }
+  }
+  
+  function saveCareer(careerName) {
+    let savedCareers = JSON.parse(localStorage.getItem('savedCareers')) || [];
+    savedCareers.push(careerName);
+    localStorage.setItem('savedCareers', JSON.stringify(savedCareers));
+    showNotification('Career saved!');
+    displaySavedCareers();
+  }
+  
+  function displaySavedCareers() {
+    const savedList = document.getElementById('saved-list');
+    savedList.innerHTML = '';
+    const savedCareers = JSON.parse(localStorage.getItem('savedCareers')) || [];
+    if (savedCareers.length > 0) {
+      savedCareers.forEach(career[_{{{CITATION{{{_1{](https://github.com/buribalazs/smooth-drag-order/tree/7b40d21d076c3e31765f61481f537beaf4c5ec9f/README.md)[_{{{CITATION{{{_2{](https://github.com/wilson535180042/IAMCOMMUNITYEXPO/tree/17f4c701536b739bce7f22bff038266bdec04004/landinglogin.php)  
